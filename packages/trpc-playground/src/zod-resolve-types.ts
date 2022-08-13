@@ -4,7 +4,7 @@ import { ZodAny } from 'zod'
 import { printNode, zodToTs } from 'zod-to-ts'
 import { generateSnippet } from './get-default-input'
 
-type QueriesType = Record<string, { inputParser: ZodAny }>
+type QueriesType = Record<string, { _def: { input: ZodAny } }>
 
 const joinQueries = (functionName: string, queries: QueriesType) => {
   const queryNames: string[] = []
@@ -13,8 +13,8 @@ const joinQueries = (functionName: string, queries: QueriesType) => {
     const stringName = `'${name}'`
     queryNames.push(stringName)
 
-    if (!query.inputParser._def) return `QueryName extends ${stringName} ? [undefined?]`
-    const { node } = zodToTs(query.inputParser as ZodAny)
+    if (!query._def.input) return `QueryName extends ${stringName} ? [undefined?]`
+    const { node } = zodToTs(query._def.input as ZodAny)
 
     const inputType = printNode(node)
     const queryType = `QueryName extends ${stringName} ? [${inputType}]`
@@ -34,8 +34,8 @@ const joinQueries = (functionName: string, queries: QueriesType) => {
 
 const getDefaultForOperations = (operations: QueriesType, operationType: string) =>
   Object.entries(operations).reduce(
-    (prev, [name, { inputParser }]) => {
-      prev[name] = generateSnippet(inputParser, { operationType, operationName: name })
+    (prev, [name, { _def: { input } }]) => {
+      prev[name] = generateSnippet(input, { operationType, operationName: name })
 
       return prev
     },
